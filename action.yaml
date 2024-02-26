@@ -25,11 +25,15 @@ inputs:
   group_name:
     description: "The group name the database should be created in."
     required: false
+  skip_if_exists:
+    description: "Skip database creation if one exists."
+    required: false
+    default: false
 
 outputs:
   hostname:
     description: "The database hostname without protocol."
-    value: ${{ steps.create-database.outputs.hostname }}
+    value: ${{ steps.get-database.outputs.hostname || steps.create-database.outputs.hostname }}
 
 runs:
   using: "composite"
@@ -55,8 +59,32 @@ runs:
         fi
 
         echo "GROUP_NAME=$GROUP_NAME" >> $GITHUB_ENV
+
+    - name: Get Database
+      id: get-database
+      if: inputs.skip_if_exists == 'true'
+      shell: bash
+      run: |
+        RESPONSE=$(curl -s -f \
+        -H "Authorization: Bearer ${{ inputs.api_token }}" \
+        "https://api.turso.tech/v1/organizations/${{ inputs.organization_name }}/databases/${{ inputs.new_database_name }}")
+
+        if [ $? -eq 0 ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        HOSTNAME=$(echo $RESPONSE | jq -r '.database.Hostname')
+        if [ -z "$HOSTNAME" ]; then
+          echo "Hostname not found in response"
+          exit 1
+        fi
+
+        echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
+
     - name: Create Database
       id: create-database
+      if: inputs.skip_if_exists != 'true' || steps.get-database.outputs.exists != 'true'
       shell: bash
       run: |
         if [ -z "${{ inputs.group_name }}" ]; then
