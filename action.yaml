@@ -72,6 +72,8 @@ runs:
         set -e
         if [ $? -eq 0 ]; then
           echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
           exit 0
         fi
 
