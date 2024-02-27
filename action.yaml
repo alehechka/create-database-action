@@ -69,7 +69,6 @@ runs:
         -H "Authorization: Bearer ${{ inputs.api_token }}" \
         "https://api.turso.tech/v1/organizations/${{ inputs.organization_name }}/databases/${{ inputs.new_database_name }}")
 
-        set -e
         if [ $? -eq 0 ]; then
           echo "exists=true" >> $GITHUB_OUTPUT
         else
