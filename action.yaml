@@ -63,12 +63,13 @@ runs:
     - name: Get Database
       id: get-database
       if: inputs.skip_if_exists == 'true'
-      shell: bash
+      shell: bash {0}
       run: |
         RESPONSE=$(curl -s -f \
         -H "Authorization: Bearer ${{ inputs.api_token }}" \
         "https://api.turso.tech/v1/organizations/${{ inputs.organization_name }}/databases/${{ inputs.new_database_name }}")
 
+        set -e
         if [ $? -eq 0 ]; then
           echo "exists=true" >> $GITHUB_OUTPUT
           exit 0
